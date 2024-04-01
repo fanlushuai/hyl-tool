@@ -124,7 +124,7 @@ ws.range(i, columns + 2).value = [
 ]
 
 # 加边框
-r = ws.range((1, columns + 2), (i, columns + 2 + 2))
+r = ws.range((1, columns + 2), (i, columns + 2 + 2 + 1))
 r.api.Borders.LineStyle = 1
 r.api.Borders.Weight = 2
 
