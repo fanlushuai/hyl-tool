@@ -139,3 +139,9 @@ wb.save()
 # wb.close()
 # app.quit()
 # app.kill()
+
+# auto-py-to-exe  auto-py-to-exe 运行
+# https://pypi.org/project/auto-py-to-exe/
+
+# Auto-Py-to-Exe完美打包python程序
+# https://zhuanlan.zhihu.com/p/130328237
