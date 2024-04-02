@@ -47,6 +47,8 @@ for v in x:
         countColumns = v
     if v.value == "体积":
         spaceColumns = v
+    if v.value == "立方":
+        spaceColumns = v    
     if v.value == "总件数":
         print("已经处理过一次了")
         # wb.close()
