@@ -95,7 +95,7 @@ def sort_criteria(item):
 
 dic = sorted(dic, key=sort_criteria, reverse=True)
 
-ws.range(1, columns + 2).value = ["收货人", "库存件数总计", "已清点"]
+ws.range(1, columns + 2).value = ["收货人", "总库存件数", "已清点"]
 i = 2
 sumCount = 0
 for d in dic:
@@ -113,7 +113,7 @@ ws.range(i, columns + 2).value = [
 ]
 
 # 加边框
-r = ws.range((1, columns + 2), (i, columns + 2 + 2 + 1))
+r = ws.range((1, columns + 2), (i, columns + 2 + 2))
 r.api.Borders.LineStyle = 1
 r.api.Borders.Weight = 2
 
