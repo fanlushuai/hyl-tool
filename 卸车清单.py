@@ -43,13 +43,11 @@ for v in x:
     print(v.value)
     if v.value == "收货人":
         senderColumns = v
-    if v.value == "件数":
+    if v.value == "件数" or v.value == "本车件数":
         countColumns = v
-    if v.value == "体积":
+    if v.value == "体积" or v.value == "立方":
         spaceColumns = v
-    if v.value == "立方":
-        spaceColumns = v    
-    if v.value == "总件数":
+    if v.value == "已清点":
         print("已经处理过一次了")
         # wb.close()
         exit()
