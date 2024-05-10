@@ -36,23 +36,30 @@ cell = ws.used_range.last_cell
 rows = cell.row
 columns = cell.column
 
+# 获取表头，进行判断
 x = ws.range((1, 1), (1, columns))
-
 
 for v in x:
     print(v.value)
     if v.value == "收货人":
         senderColumns = v
+    if v.value == "收货地址":
+        addressColumns = v
+    if v.value == "总件数":
+        orderCountColumns = v
     if v.value == "件数" or v.value == "本车件数":
         countColumns = v
     if v.value == "体积" or v.value == "立方":
         spaceColumns = v
+
+    # 判断是否是已清点，如果是，就退出
     if v.value == "已清点":
         print("已经处理过一次了")
         # wb.close()
         exit()
 
 # 列，进行计算了。
+# 以收货人为基准，计算收货人下面的所有数据
 y = ws.range((1, senderColumns.column), (rows - 1, senderColumns.column))
 
 
@@ -65,15 +72,38 @@ for v in y:
         continue
 
     count = Decimal(str(ws[v.row - 1, countColumns.column - 1].value))
-    if ws[v.row - 1, spaceColumns.column - 1].value != None:
 
+    if ws[v.row - 1, spaceColumns.column - 1].value != None:
         space = Decimal(str(ws[v.row - 1, spaceColumns.column - 1].value))
     else:
         space = Decimal("0")
 
     # print("件数%s 体积%s", v.value, count, space)
 
+    address = str(ws[v.row - 1, addressColumns.column - 1].value)
+    if address != None and address != "None":
+
+        if "高平" in address:
+            address = "高平"
+        elif "长治" in address:
+            address = "长治"
+        else:
+            # 山西，默认都是空
+            address = ""
+    else:
+        address = ""
     # 如果没有，就添加
+
+    orderCount = Decimal(str(ws[v.row - 1, orderCountColumns.column - 1].value))
+
+    if orderCount != count:
+        print("件数不匹配", v.value, count, orderCount)
+        r = ws.range((v.row, 1), (v.row, addressColumns.column))
+        # r.api.Borders.LineStyle = 2
+        # r.api.Borders.Weight = 3
+        r.api.Font.Bold = True
+        r.api.Font.Size = r.api.Font.Size - 1
+        r.api.Characters.Font.Underline = 2
 
     has = 0
     for d in dic:
@@ -87,7 +117,9 @@ for v in y:
     if has != 1:
         print("不存在新建", v.value, count, space)
 
-        dic.append({"name": v.value, "count": count, "space": space})
+        dic.append(
+            {"name": v.value, "count": count, "space": space, "address": address}
+        )
 
     # 否则，就累加
     # {"name": v.value, "count": count, "space": space}
@@ -103,12 +135,18 @@ def sort_criteria(item):
 
 dic = sorted(dic, key=sort_criteria, reverse=True)
 
-ws.range(1, columns + 2).value = ["收货人", "总件数", "总方数", "已清点"]
+ws.range(1, columns + 2).value = ["收货人", "总件数", "总方数", "地址", "已清点"]
 i = 2
 sumCount = 0
 sumSpace = 0
 for d in dic:
-    ws.range(i, columns + 2).value = [d["name"], str(d["count"]), str(d["space"]), ""]
+    ws.range(i, columns + 2).value = [
+        d["name"],
+        str(d["count"]),
+        str(d["space"]),
+        d["address"],
+        "",
+    ]
     sumCount += d["count"]
     sumSpace += d["space"]
     i += 1
@@ -121,10 +159,11 @@ ws.range(i, columns + 2).value = [
     str(sumCount),
     str(sumSpace),
     "",
+    "",
 ]
 
 # 加边框
-r = ws.range((1, columns + 2), (i, columns + 2 + 2 + 1))
+r = ws.range((1, columns + 2), (i, columns + 2 + 2 + 1 + 1))
 r.api.Borders.LineStyle = 1
 r.api.Borders.Weight = 2
 
