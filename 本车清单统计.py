@@ -66,6 +66,10 @@ y = ws.range((1, senderColumns.column), (rows - 1, senderColumns.column))
 # dic=[{k:name,v:[,,]}]
 dic = []
 
+sumSpaceForGaoPing = Decimal("0")
+sumSpaceForChangZhi = Decimal("0")
+sumSpaceForJinCheng = Decimal("0")
+
 for v in y:
 
     if v.value == "收货人":
@@ -85,13 +89,18 @@ for v in y:
 
         if "高平" in address:
             address = "高平"
+            sumSpaceForGaoPing += space
         elif "长治" in address:
             address = "长治"
+            sumSpaceForChangZhi += space
         else:
             # 山西，默认都是空
             address = ""
+            sumSpaceForJinCheng += space
     else:
         address = ""
+        sumSpaceForJinCheng += space
+
     # 如果没有，就添加
 
     orderCount = Decimal(str(ws[v.row - 1, orderCountColumns.column - 1].value))
@@ -166,6 +175,15 @@ ws.range(i, columns + 2).value = [
 r = ws.range((1, columns + 2), (i, columns + 2 + 2 + 1 + 1))
 r.api.Borders.LineStyle = 1
 r.api.Borders.Weight = 2
+
+if sumSpaceForGaoPing > 0:
+    ws.range(i + 2, columns + 2).value = ["地址", "总方数"]
+    ws.range(i + 3, columns + 2).value = ["高平", str(sumSpaceForGaoPing)]
+    ws.range(i + 4, columns + 2).value = ["长治", str(sumSpaceForChangZhi)]
+    ws.range(i + 5, columns + 2).value = ["晋城", str(sumSpaceForJinCheng)]
+    r = ws.range((i + 2, columns + 2), (i + 5, columns + 2 + 1))
+    r.api.Borders.LineStyle = 1
+    r.api.Borders.Weight = 2
 
 ws.autofit()
 
