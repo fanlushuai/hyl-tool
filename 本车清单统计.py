@@ -58,7 +58,8 @@ for v in x:
 
     # 判断是否是已清点，如果是，就退出
     if v.value == "已清点":
-        print("已经处理过一次了")
+        print("已经处理过一次了,请重新导出文件")
+        time.sleep(8)
         # wb.close()
         exit()
 
@@ -73,6 +74,7 @@ dic = []
 sumSpaceForGaoPing = Decimal("0")
 sumSpaceForChangZhi = Decimal("0")
 sumSpaceForJinCheng = Decimal("0")
+sumSpaceForYangCheng = Decimal("0")
 
 for v in y:
 
@@ -97,6 +99,9 @@ for v in y:
         elif "长治" in address:
             address = "长治"
             sumSpaceForChangZhi += space
+        elif "阳城" in address:
+            address = "阳城"
+            sumSpaceForYangCheng += space
         else:
             # 山西，默认都是空
             address = ""
@@ -122,6 +127,7 @@ for v in y:
     for d in dic:
         if d["name"] == v.value:
             print("存在追加", v.value, count, space)
+            d["orderCount"] = d["orderCount"] + 1
             d["count"] = d["count"] + count
             d["space"] = d["space"] + space
             has = 1
@@ -129,9 +135,14 @@ for v in y:
 
     if has != 1:
         print("不存在新建", v.value, count, space)
-
         dic.append(
-            {"name": v.value, "count": count, "space": space, "address": address}
+            {
+                "name": v.value,
+                "count": count,
+                "space": space,
+                "address": address,
+                "orderCount": 1,
+            }
         )
 
     # 否则，就累加
@@ -148,20 +159,30 @@ def sort_criteria(item):
 
 dic = sorted(dic, key=sort_criteria, reverse=True)
 
-ws.range(1, columns + 2).value = ["收货人", "总件数", "总方数", "地址", "已清点"]
+ws.range(1, columns + 2).value = [
+    "收货人",
+    "总方数",
+    "地址",
+    "单数",
+    "总件数",
+    "已清点",
+]
 i = 2
 sumCount = 0
 sumSpace = 0
+sumOrderCount = 0
 for d in dic:
     ws.range(i, columns + 2).value = [
         d["name"],
-        str(d["count"]),
         str(d["space"]),
         d["address"],
+        str(d["orderCount"]),
+        str(d["count"]),
         "",
     ]
     sumCount += d["count"]
     sumSpace += d["space"]
+    sumOrderCount += d["orderCount"]
     i += 1
     # ws.range(2, columns + 5).value = d["name"]
     # ws.range(2, columns + 6).value = str(d["count"])
@@ -169,25 +190,42 @@ for d in dic:
 
 ws.range(i, columns + 2).value = [
     ("共" + str(i - 2) + "行"),
-    str(sumCount),
     str(sumSpace),
     "",
+    str(sumOrderCount),
+    str(sumCount),
     "",
 ]
 
 # 加边框
-r = ws.range((1, columns + 2), (i, columns + 2 + 2 + 1 + 1))
+r = ws.range((1, columns + 2), (i, columns + 2 + 5))
 r.api.Borders.LineStyle = 1
 r.api.Borders.Weight = 2
 
+fromLine = i + 2
+toLine = i + 2
+
+ws.range(i + 2, columns + 2).value = ["地址", "总方数"]
 if sumSpaceForGaoPing > 0:
-    ws.range(i + 2, columns + 2).value = ["地址", "总方数"]
-    ws.range(i + 3, columns + 2).value = ["高平", str(sumSpaceForGaoPing)]
-    ws.range(i + 4, columns + 2).value = ["长治", str(sumSpaceForChangZhi)]
-    ws.range(i + 5, columns + 2).value = ["晋城", str(sumSpaceForJinCheng)]
-    r = ws.range((i + 2, columns + 2), (i + 5, columns + 2 + 1))
-    r.api.Borders.LineStyle = 1
-    r.api.Borders.Weight = 2
+    toLine += 1
+    fromLine += 1
+    ws.range(fromLine, columns + 2).value = ["高平", str(sumSpaceForGaoPing)]
+if sumSpaceForChangZhi > 0:
+    toLine += 1
+    fromLine += 1
+    ws.range(fromLine, columns + 2).value = ["长治", str(sumSpaceForChangZhi)]
+if sumSpaceForYangCheng > 0:
+    toLine += 1
+    fromLine += 1
+    ws.range(fromLine, columns + 2).value = ["阳城", str(sumSpaceForYangCheng)]
+if sumSpaceForJinCheng > 0:
+    toLine += 1
+    fromLine += 1
+    ws.range(fromLine, columns + 2).value = ["晋城", str(sumSpaceForJinCheng)]
+
+r = ws.range((i + 2, columns + 2), (toLine, columns + 2 + 1))
+r.api.Borders.LineStyle = 1
+r.api.Borders.Weight = 2
 
 ws.autofit()
 
