@@ -47,7 +47,7 @@ for v in x:
     print(v.value)
     if v.value == "收货人":
         senderColumns = v
-    if v.value == "收货地址":
+    if v.value == "收货地址" or v.value =="收货人地址":
         addressColumns = v
     if v.value == "总件数":
         orderCountColumns = v
