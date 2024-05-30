@@ -161,7 +161,7 @@ print("最新文件路径:\n%s" % file_new)
 
 
 import xlwings as xw
-
+from xlwings.utils import rgb_to_int
 app = xw.App(visible=True, add_book=False)  # 界面设置
 app.display_alerts = True  # 关闭提示信息
 app.screen_updating = True  # 关闭显示更新
@@ -280,7 +280,8 @@ for v in y:
             r.api.Font.Bold = False
         else:
             r.api.Font.Size = r.api.Font.Size - 1
-            r.api.Font.ColorIndex = 44
+            r.api.Font.ColorIndex = 3
+            
             r.api.Font.Italic = True
         r.api.Characters.Font.Underline = 2
 
