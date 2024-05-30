@@ -1,3 +1,135 @@
+import sqlite3
+
+
+def createTable():
+    # 创建连接
+    conn = sqlite3.connect("doOrder.db")
+
+    # 游标
+    c = conn.cursor()
+    try:
+        # 如果存在，就会跳过
+        # 建表语句
+        c.execute(
+            """CREATE TABLE orderDoHistory (
+                    uniqueID TEXT,
+                    orderID TEXT,
+                    allCount INTEGER,
+                    currentTimesCount INTEGER
+            )"""
+        )
+        print("创建成功")
+    except Exception as e:
+        print(e)
+    finally:
+        conn.commit()
+        conn.close()
+
+
+def addHistory(uniqueID, orderID, allCount, currentTimesCount):
+    conn = sqlite3.connect("doOrder.db")
+    c = conn.cursor()
+    # 插入语句
+    sql = f"""INSERT INTO orderDoHistory (uniqueID, orderID, allCount,currentTimesCount) VALUES ('{uniqueID}', '{orderID}', {allCount},{currentTimesCount})"""
+    try:
+        c.execute(sql)
+        print("添加成功")
+    except Exception as e:
+        print(e)
+    finally:
+        conn.commit()
+        conn.close()
+
+
+def getHistory(uniqueID, orderID):
+    conn = sqlite3.connect("doOrder.db")
+    c = conn.cursor()
+    sql = f"""SELECT * FROM orderDoHistory WHERE uniqueID='{uniqueID}' AND orderID='{orderID}'"""
+    try:
+        result = c.execute(sql)
+        return result.fetchall()[0]
+    except Exception as e:
+        print(e)
+    finally:
+        conn.close()
+
+
+def updateHistory(uniqueID, orderID, currentTimesCount):
+    conn = sqlite3.connect("doOrder.db")
+    c = conn.cursor()
+    sql = f"""UPDATE orderDoHistory SET currentTimesCount={currentTimesCount} WHERE uniqueID='{uniqueID}' AND orderID='{orderID}'"""
+    try:
+        c.execute(sql)
+        print("更新成功")
+    except Exception as e:
+        print(e)
+    finally:
+        conn.commit()
+        conn.close()
+
+
+def getHistoryAllCurrentTimesCount(orderID):
+    conn = sqlite3.connect("doOrder.db")
+    c = conn.cursor()
+    sql = f"""SELECT sum(currentTimesCount) FROM orderDoHistory WHERE orderID='{orderID}'"""
+    try:
+        result = c.execute(sql)
+        return result.fetchall()[0][0]
+    except Exception as e:
+        print(e)
+    finally:
+        conn.close()
+
+
+def genUniqueID(orderNumStr):
+    import hashlib
+
+    result = hashlib.md5(orderNumStr.encode())
+    return result.hexdigest()
+
+
+def getHistoryAll(orderID):
+    conn = sqlite3.connect("doOrder.db")
+    c = conn.cursor()
+    sql = f"""SELECT * FROM orderDoHistory WHERE orderID='{orderID}'"""
+    try:
+        result = c.execute(sql)
+        return result.fetchall()
+    except Exception as e:
+        print(e)
+    finally:
+        conn.close()
+
+
+def getHistoryAll():
+    conn = sqlite3.connect("doOrder.db")
+    c = conn.cursor()
+    sql = f"""SELECT * FROM orderDoHistory """
+    try:
+        result = c.execute(sql)
+        return result.fetchall()
+    except Exception as e:
+        print(e)
+    finally:
+        conn.close()
+
+
+def orderAllDone(uniqueID, orderID, allCount, currentTimesCount):
+
+    # 处理车次运单的数据。一个车次，只能有一个运单。
+    res = getHistory(uniqueID, orderID)
+    if res is None:
+        addHistory(uniqueID, orderID, allCount, currentTimesCount)
+    else:
+        updateHistory(uniqueID, orderID, currentTimesCount)
+
+    # 一个运单，可以有很多条，不同的车次
+    allCurrentTimesCount = getHistoryAllCurrentTimesCount(orderID)
+    return allCurrentTimesCount >= allCount
+
+
+createTable()
+
 # 读取文件，校验格式。拖动进去来处理。
 # 加上统计，原样输出，查看。
 # 输出新文件
@@ -43,11 +175,14 @@ columns = cell.column
 # 获取表头，进行判断
 x = ws.range((1, 1), (1, columns))
 
+
 for v in x:
     print(v.value)
+    if v.value == "运单号":
+        orderNoColumns = v
     if v.value == "收货人":
         senderColumns = v
-    if v.value == "收货地址" or v.value =="收货人地址":
+    if v.value == "收货地址" or v.value == "收货人地址":
         addressColumns = v
     if v.value == "总件数":
         orderCountColumns = v
@@ -62,6 +197,19 @@ for v in x:
         time.sleep(8)
         # wb.close()
         exit()
+
+
+# 生成此车次的唯一标记
+
+orderNoAll = ws.range((2, orderNoColumns.column), (rows, orderNoColumns.column))
+orderNumsStr = ""
+for v in orderNoAll:
+    print(v.value)
+    orderNumsStr += v.value
+uniqueId = genUniqueID(orderNumsStr)
+print("uniqueId", uniqueId)
+# 获取所有的部分发货数据
+
 
 # 列，进行计算了。
 # 以收货人为基准，计算收货人下面的所有数据
@@ -90,6 +238,7 @@ for v in y:
 
     # print("件数%s 体积%s", v.value, count, space)
 
+    orderNum = str(ws[v.row - 1, orderNoColumns.column - 1].value)
     address = str(ws[v.row - 1, addressColumns.column - 1].value)
     if address != None and address != "None":
 
@@ -120,7 +269,19 @@ for v in y:
         # r.api.Borders.LineStyle = 2
         # r.api.Borders.Weight = 3
         r.api.Font.Bold = True
-        r.api.Font.Size = r.api.Font.Size - 1
+
+        # 各种样式参考：https://blog.csdn.net/NANGE007/article/details/124934344
+        if orderAllDone(uniqueId, orderNum, orderCount, count):
+            print("此被拆单全部处理完毕")
+            r.api.Font.Size = r.api.Font.Size - 1
+            # r.api.Font.Italic = True
+            r.api.Font.ColorIndex = 10
+            r.color = 169, 208, 142
+            r.api.Font.Bold = False
+        else:
+            r.api.Font.Size = r.api.Font.Size - 1
+            r.api.Font.ColorIndex = 44
+            r.api.Font.Italic = True
         r.api.Characters.Font.Underline = 2
 
     has = 0
