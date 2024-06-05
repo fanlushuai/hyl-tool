@@ -143,7 +143,7 @@ import os
 path = r"D:\360安全浏览器下载"
 
 print("即将读取 " + path + " 文件夹中的最新文件")
-time.sleep(4)
+time.sleep(2)
 
 # 获取文件夹中所有的文件(名)，以列表形式返货
 lists = os.listdir(path)
@@ -159,7 +159,7 @@ file_new = os.path.join(path, lists[-1])
 
 print("最新文件路径:\n%s" % file_new)
 
-
+import sys
 import xlwings as xw
 from xlwings.utils import rgb_to_int
 app = xw.App(visible=True, add_book=False)  # 界面设置
@@ -194,9 +194,9 @@ for v in x:
     # 判断是否是已清点，如果是，就退出
     if v.value == "已清点":
         print("已经处理过一次了,请重新导出文件")
-        time.sleep(8)
-        # wb.close()
-        exit()
+        from tkinter import messagebox
+        messagebox.showinfo('信息', '放弃处理。【以前已经处理过了】')
+        sys.exit(0)
 
 
 # 生成此车次的唯一标记
