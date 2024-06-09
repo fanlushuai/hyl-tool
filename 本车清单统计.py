@@ -284,6 +284,9 @@ for v in y:
             
             r.api.Font.Italic = True
         r.api.Characters.Font.Underline = 2
+    else:
+        # 如果相等，直接清除数据
+        ws[v.row - 1, countColumns.column - 1].value=None
 
     has = 0
     for d in dic:
